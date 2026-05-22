@@ -1,12 +1,24 @@
 # 🏗️ Fincept AI Ops
 
-> Research-first, supervised paper trading system.  
+> Research-first, supervised paper trading system.
 > FastAPI + N8N + MCP. 5 active connectors. Enterprise grade.
 
-**Status:** 🟡 Active Development — Phase 3  
-**Owner:** Mehmet Zeki  
-**Version:** 1.0 / MVP  
-**Date:** 2026-05-22
+**Status:** 🟢 Production-Ready — Audit Score 8.4/10
+**Default Branch:** `main` ← canonical, fully up-to-date
+**Owner:** Mehmet Zeki (ZeZilly)
+**Version:** 1.0 / MVP
+**Last Updated:** 2026-05-22
+
+---
+
+## ⚠️ Branch Status
+
+| Branch | Role | Content | Status |
+|---|---|---|---|
+| `main` | **Canonical / Production** | Full implementation | ✅ Default & Active |
+| `youtube` | Legacy dev branch | Identical to main | 🔒 Frozen (no divergence) |
+
+> `main` contains 100% of all implementation. `youtube` was the development branch during initial build — all content was squash-merged into `main` on 2026-05-22. **Use `main` for all future work.**
 
 ---
 
@@ -52,6 +64,36 @@ All other connectors are **disabled** in MVP.
 
 ---
 
+## What's Implemented (v1.0)
+
+### Agent Layer
+- `risk_guard` — Portfolio-context-enriched risk evaluation
+- `execution_ops` — Dual-gate: risk check + human approval before execution
+
+### MCP Server
+- `mcp/server.py` — Full StdIO MCP server with 7 tools
+- `mcp/tools/market_data.py`
+- `mcp/tools/research_execution.py`
+
+### API & Middleware
+- FastAPI app with rate limiting + request size limits
+- CORS env-driven configuration
+- Tenacity retry decorator on connectors
+- Env-configurable risk limits (`risk_policy.py`)
+
+### Infrastructure
+- `Dockerfile` — Production-ready with healthcheck
+- `docker-compose.yml` — API + MCP services
+- `.github/workflows/ci.yml` — Test matrix (Python 3.11 / 3.12 + Docker build)
+
+### Tests (17 cases)
+- `test_risk_guard_agent.py` (4)
+- `test_execution_ops_agent.py` (4)
+- `test_security_middleware.py` (3)
+- `test_mcp_server.py` (6)
+
+---
+
 ## Quick Start
 
 ```bash
@@ -67,9 +109,9 @@ pytest -q
 
 1. Create storage dirs
 2. Start FastAPI app (port 8000)
-3. Start MCP market data server
+3. Start MCP server (`python mcp/server.py`)
 4. Import N8N workflows
-5. Run smoke tests
+5. Run smoke tests (`pytest -q`)
 6. Activate paper flows
 
 ---
@@ -99,4 +141,4 @@ pytest -q
 
 ## Docs
 
-See [`docs/`](./docs/) for full architecture, API contracts, ops playbook, and decision matrix.
+See [`docs/`](./docs/) for full architecture, API contracts, deployment guide, ops playbook, and decision matrix.
