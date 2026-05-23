@@ -6,6 +6,6 @@ pytest>=8.2.0
 pytest-asyncio>=0.23.0
 httpretty>=1.1.0
 yfinance>=0.2.38
-python-multipart>=0.0.9
+python-multipart>=0.0.29
 python-dotenv>=1.0.0
 tenacity>=8.3.0
