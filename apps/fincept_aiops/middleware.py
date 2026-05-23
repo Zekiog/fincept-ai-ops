@@ -1,12 +1,40 @@
-"""Security middleware — rate limiting, CORS hardening, request size limits."""
+"""Security middleware — API key auth, rate limiting, CORS hardening, request size limits."""
 import os
 import time
 from collections import defaultdict
-from fastapi import Request
+from fastapi import Request, HTTPException, Depends
+from fastapi.security import APIKeyHeader
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 
+# ---------------------------------------------------------------------------
+# API Key Authentication
+# ---------------------------------------------------------------------------
+_API_KEY_HEADER = APIKeyHeader(name="X-API-Key", auto_error=False)
 
+_UNPROTECTED_PATHS = {"/", "/health", "/docs", "/openapi.json", "/redoc"}
+
+
+def get_api_key(api_key: str = Depends(_API_KEY_HEADER)) -> str:
+    """FastAPI dependency — validates X-API-Key header against FINCEPT_API_KEY env var."""
+    expected = os.getenv("FINCEPT_API_KEY", "")
+    if not expected:
+        raise HTTPException(
+            status_code=500,
+            detail={"ok": False, "error": "FINCEPT_API_KEY not configured on server"}
+        )
+    if not api_key or api_key != expected:
+        raise HTTPException(
+            status_code=401,
+            detail={"ok": False, "error": "invalid_or_missing_api_key"},
+            headers={"WWW-Authenticate": "ApiKey"},
+        )
+    return api_key
+
+
+# ---------------------------------------------------------------------------
+# Rate Limiting
+# ---------------------------------------------------------------------------
 class RateLimitMiddleware(BaseHTTPMiddleware):
     WINDOW_SECONDS = 60
     MAX_REQUESTS = int(os.getenv("RATE_LIMIT_PER_MIN", "60"))
@@ -30,6 +58,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+# ---------------------------------------------------------------------------
+# Request Size Limit
+# ---------------------------------------------------------------------------
 class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
     MAX_BYTES = int(os.getenv("MAX_REQUEST_BYTES", str(1 * 1024 * 1024)))
 
@@ -40,8 +71,20 @@ class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
         return await call_next(request)
 
 
+# ---------------------------------------------------------------------------
+# CORS Origins
+# ---------------------------------------------------------------------------
 def get_cors_origins() -> list:
+    """Returns allowed CORS origins. Never returns wildcard '*' in production."""
     raw = os.getenv("CORS_ORIGINS", "")
-    if not raw or raw.strip() == "*":
-        return ["*"]
+    env = os.getenv("APP_ENV", "development").lower()
+    if not raw:
+        if env == "production":
+            # Production must have explicit CORS_ORIGINS set
+            raise RuntimeError("CORS_ORIGINS must be explicitly set in production. Wildcard '*' is not allowed.")
+        return ["http://localhost:3000", "http://localhost:8000"]
+    if raw.strip() == "*":
+        if env == "production":
+            raise RuntimeError("CORS_ORIGINS='*' is not allowed in production.")
+        return ["*"]  # dev/test only
     return [o.strip() for o in raw.split(",") if o.strip()]

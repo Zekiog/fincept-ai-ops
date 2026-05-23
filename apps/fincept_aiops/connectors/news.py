@@ -14,14 +14,39 @@ class NewsConnector(BaseConnector):
         try:
             import yfinance as yf
             news = yf.Ticker(symbol).news or []
-            items = [{"title": n.get("title", ""), "publisher": n.get("publisher", ""),
-                      "link": n.get("link", ""), "published_at": n.get("providerPublishTime", "")} for n in news[:limit]]
+            items = [
+                {
+                    "title": n.get("title", ""),
+                    "publisher": n.get("publisher", ""),
+                    "link": n.get("link", ""),
+                    "published_at": n.get("providerPublishTime", "")
+                }
+                for n in news[:limit]
+            ]
             return {"ok": True, "symbol": symbol, "count": len(items), "items": items}
         except Exception as e:
             return {"ok": False, "error": str(e), "symbol": symbol}
 
-    def _stub(self, symbol, limit):
-        return {"ok": True, "symbol": symbol or "STUB", "stub": True, "count": 2, "items": [
-            {"title": f"{symbol} beats earnings estimates", "publisher": "Reuters", "link": "https://stub.example.com/1", "published_at": "2026-05-22"},
-            {"title": f"{symbol} expands into new markets", "publisher": "Bloomberg", "link": "https://stub.example.com/2", "published_at": "2026-05-21"},
-        ]}
+    def _stub(self, symbol: str, limit: int) -> Dict[str, Any]:
+        """Returns stub data for testing. URLs are null — do not follow."""
+        stub_symbol = symbol or "STUB"
+        return {
+            "ok": True,
+            "symbol": stub_symbol,
+            "stub": True,
+            "count": 2,
+            "items": [
+                {
+                    "title": f"{stub_symbol} beats earnings estimates",
+                    "publisher": "Reuters [stub]",
+                    "link": None,
+                    "published_at": "2026-05-22"
+                },
+                {
+                    "title": f"{stub_symbol} expands into new markets",
+                    "publisher": "Bloomberg [stub]",
+                    "link": None,
+                    "published_at": "2026-05-21"
+                },
+            ]
+        }
