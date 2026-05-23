@@ -1,0 +1,111 @@
+# ─── Python ───────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*$py.class
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# ─── Virtual Environments ────────────────────────────────
+venv/
+.venv/
+env/
+.env/
+ENV/
+env.bak/
+venv.bak/
+
+# ─── Environment & Secrets ───────────────────────────────
+.env
+.env.*
+!.env.example
+*.secret
+secrets.json
+secrets.yaml
+secrets.yml
+credentials.json
+service_account.json
+*_key.json
+*_credentials.json
+
+# ─── AI / LLM Prompt Files (sensitive) ──────────────────
+*_IMPLEMENTATION_PROMPT.md
+*_PROMPT.md
+PERPLEXITY_*.md
+COPILOT_*.md
+CHATGPT_*.md
+CLAUDE_*.md
+GPT_*.md
+LLM_PROMPT*
+prompt_drafts/
+prompts/private/
+
+# ─── Audit & Internal Docs (keep local) ─────────────────
+IMPLEMENTATION_AUDIT.md
+*_AUDIT.md
+*_INTERNAL.md
+*_DRAFT.md
+
+# ─── Data & State ────────────────────────────────────────
+data/
+*.jsonl
+*.sqlite
+*.db
+state/
+audit_logs/
+
+# ─── IDE & Editor ────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ─── Testing & Coverage ──────────────────────────────────
+.pytest_cache/
+.coverage
+coverage.xml
+htmlcov/
+.tox/
+.mypy_cache/
+.ruff_cache/
+
+# ─── Docker ──────────────────────────────────────────────
+.dockerignore
+docker-compose.override.yml
+
+# ─── Logs ────────────────────────────────────────────────
+*.log
+logs/
+*.out
+
+# ─── Node (N8N workflows if local) ───────────────────────
+node_modules/
+.npm
+
+# ─── Jupyter ─────────────────────────────────────────────
+.ipynb_checkpoints/
+*.ipynb
+
+# ─── macOS ───────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
