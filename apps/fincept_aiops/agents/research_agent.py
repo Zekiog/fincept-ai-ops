@@ -1,7 +1,9 @@
 import re
 from typing import Any, Dict
-from apps.fincept_aiops.connectors.registry import get_connector
+
+from apps.fincept_aiops.agents.base_agent import AgentStatus, BaseAgent
 from apps.fincept_aiops.audit_logger import AuditLogger
+from apps.fincept_aiops.connectors.registry import get_connector
 
 audit = AuditLogger()
 
@@ -13,7 +15,7 @@ _BULL_KEYWORDS = frozenset(["beat", "growth", "expand", "record", "profit", "upg
 _BEAR_KEYWORDS = frozenset(["miss", "decline", "loss", "recall", "risk", "downgrade", "cut"])
 
 
-class ResearchAgent:
+class ResearchAgent(BaseAgent):
     """Agent 1 — pulls market + news + fundamentals, builds a research note.
 
     Security:
@@ -24,6 +26,16 @@ class ResearchAgent:
     """
 
     def run(self, symbol: str, timeframe: str = "1d") -> Dict[str, Any]:
+        self._set_status(AgentStatus.RUNNING)
+        try:
+            result = self._build_note(symbol, timeframe)
+            self._set_status(AgentStatus.IDLE)
+            return result
+        except Exception:
+            self._set_status(AgentStatus.ERROR)
+            raise
+
+    def _build_note(self, symbol: str, timeframe: str = "1d") -> Dict[str, Any]:
         # --- Input validation ---
         symbol = symbol.strip().upper()
         if not _SYMBOL_RE.match(symbol):

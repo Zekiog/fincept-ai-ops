@@ -1,0 +1,44 @@
+{
+  "name": "briefing_scheduler",
+  "nodes": [
+    {
+      "id": "cron",
+      "name": "Daily 17:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "parameters": {
+        "rule": { "interval": [{ "field": "cronExpression", "expression": "0 17 * * 1-5" }] }
+      }
+    },
+    {
+      "id": "build",
+      "name": "Build Briefing",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.FINCEPT_API_URL || 'http://api:8000'}}/briefing/build",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\"extra\":{\"trigger\":\"daily-scheduler\"}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "audit",
+      "name": "Audit",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "GET",
+        "url": "={{$env.FINCEPT_API_URL || 'http://api:8000'}}/ui/audit"
+      }
+    }
+  ],
+  "connections": {
+    "Daily 17:00": { "main": [[{ "node": "Build Briefing", "type": "main", "index": 0 }]] },
+    "Build Briefing": { "main": [[{ "node": "Audit", "type": "main", "index": 0 }]] }
+  }
+}

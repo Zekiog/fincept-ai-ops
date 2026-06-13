@@ -1,6 +1,8 @@
 import os
 from typing import Any, Dict
+
 from apps.fincept_aiops.connectors.base import BaseConnector
+from apps.fincept_aiops.connectors.retry import with_retry
 
 
 class FundamentalsConnector(BaseConnector):
@@ -11,14 +13,26 @@ class FundamentalsConnector(BaseConnector):
         if os.getenv("MARKET_DATA_PROVIDER", "stub") == "stub" or not symbol:
             return self._stub(symbol)
         try:
-            import yfinance as yf
-            info = yf.Ticker(symbol).info or {}
-            return {"ok": True, "symbol": symbol, "market_cap": info.get("marketCap"),
-                    "pe_ratio": info.get("trailingPE"), "revenue_ttm": info.get("totalRevenue"),
-                    "debt_to_equity": info.get("debtToEquity"), "current_ratio": info.get("currentRatio"),
-                    "roe": info.get("returnOnEquity"), "sector": info.get("sector")}
+            return self._fetch_live(symbol)
         except Exception as e:
             return {"ok": False, "error": str(e), "symbol": symbol}
+
+    @with_retry()
+    def _fetch_live(self, symbol: str) -> Dict[str, Any]:
+        import yfinance as yf
+
+        info = yf.Ticker(symbol).info or {}
+        return {
+            "ok": True,
+            "symbol": symbol,
+            "market_cap": info.get("marketCap"),
+            "pe_ratio": info.get("trailingPE"),
+            "revenue_ttm": info.get("totalRevenue"),
+            "debt_to_equity": info.get("debtToEquity"),
+            "current_ratio": info.get("currentRatio"),
+            "roe": info.get("returnOnEquity"),
+            "sector": info.get("sector"),
+        }
 
     def _stub(self, symbol):
         return {"ok": True, "symbol": symbol or "STUB", "market_cap": 3_000_000_000_000,

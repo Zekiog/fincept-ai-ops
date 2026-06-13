@@ -1,21 +1,34 @@
 from typing import Any, Dict
-from apps.fincept_aiops.paper_broker import PaperBrokerAdapter
+
+from apps.fincept_aiops.agents.base_agent import AgentStatus, BaseAgent
 from apps.fincept_aiops.agents.risk_guard import RiskGuardAgent
-from apps.fincept_aiops.state_store import StateStore
 from apps.fincept_aiops.audit_logger import AuditLogger
+from apps.fincept_aiops.paper_broker import PaperBrokerAdapter
+from apps.fincept_aiops.state_store import StateStore
 
 
-class ExecutionOpsAgent:
+class ExecutionOpsAgent(BaseAgent):
     """Agent 4 — Orchestrates the full execution lifecycle:
     risk_guard check → approval verification → paper submit → state update.
     Hard rule: both risk_approved AND human_approved required. No exceptions.
     """
 
     def __init__(self):
+        super().__init__()
         self.broker = PaperBrokerAdapter()
         self.risk_guard = RiskGuardAgent()
         self.state = StateStore()
         self.audit = AuditLogger()
+
+    def run(self, order_intent: Dict[str, Any], portfolio_context: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        self._set_status(AgentStatus.RUNNING)
+        try:
+            result = self.execute(order_intent, portfolio_context)
+            self._set_status(AgentStatus.IDLE)
+            return result
+        except Exception:
+            self._set_status(AgentStatus.ERROR)
+            raise
 
     def execute(self, order_intent: Dict[str, Any], portfolio_context: Dict[str, Any] = None) -> Dict[str, Any]:
         risk_result = self.risk_guard.evaluate(order_intent, portfolio_context or {})

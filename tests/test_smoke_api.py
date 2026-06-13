@@ -1,7 +1,14 @@
+import os
+
+os.environ.setdefault("FINCEPT_API_KEY", "test-api-key")
+os.environ.setdefault("APPROVAL_SECRET", "test-approval-secret")
+os.environ.setdefault("MARKET_DATA_PROVIDER", "stub")
+
 from fastapi.testclient import TestClient
 from apps.fincept_aiops.app import app
 
 client = TestClient(app)
+AUTH_HEADERS = {"X-API-Key": os.environ["FINCEPT_API_KEY"]}
 
 
 def test_root():
@@ -48,11 +55,26 @@ def test_risk_reject_size():
     assert "size_too_large" in r.json()["reason_codes"]
 
 
-def test_paper_submit_blocked_without_approval():
+def test_paper_submit_requires_api_key():
+    """Auth wall: missing X-API-Key returns 401."""
     r = client.post("/broker/paper-submit", json={
         "order_intent": {"asset": "AAPL", "side": "buy", "thesis": "x", "size_pct": 0.05, "qty": 10, "price": 150.0},
         "portfolio_context": {}, "human_approved": False,
     })
+    assert r.status_code == 401
+
+
+def test_paper_submit_blocked_without_approval():
+    """With valid auth + human_approved=False the risk/approval gate returns 403."""
+    r = client.post(
+        "/broker/paper-submit",
+        headers=AUTH_HEADERS,
+        json={
+            "order_intent": {"asset": "AAPL", "side": "buy", "thesis": "x", "size_pct": 0.05, "qty": 10, "price": 150.0},
+            "portfolio_context": {},
+            "human_approved": False,
+        },
+    )
     assert r.status_code == 403
 
 

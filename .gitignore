@@ -63,8 +63,14 @@ IMPLEMENTATION_AUDIT.md
 *_DRAFT.md
 
 # ─── Data & State ────────────────────────────────────────
+# Blanket-ignore data dirs but keep the scaffold gitkeeps explicitly tracked.
 data/
-*.jsonl
+!data/state/
+!data/audit/
+!data/state/.gitkeep
+!data/audit/.gitkeep
+data/state/*.json
+data/audit/*.jsonl
 *.sqlite
 *.db
 state/
