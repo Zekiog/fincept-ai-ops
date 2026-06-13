@@ -36,7 +36,10 @@ def with_retry(stop_attempts: int | None = None, wait_min: float = 1.0, wait_max
             try:
                 return fn(*args, **kwargs)
             except Exception as exc:
-                logger.warning("connector call %s failed: %s — retrying", fn.__name__, exc)
+                # Tenacity decides whether to retry based on `attempts`. We
+                # log each failure neutrally; the next attempt (or its
+                # absence) is implied by the surrounding decorator.
+                logger.warning("connector call %s failed: %s", fn.__name__, exc)
                 raise
 
         return wrapper

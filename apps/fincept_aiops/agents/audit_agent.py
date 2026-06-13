@@ -17,17 +17,13 @@ class AuditAgent(BaseAgent):
     def recent(self, n: int = 50):
         return self.logger.recent(n)
 
-    def run(self, record: Dict[str, Any] | None = None, n: int = 50) -> Any:
-        """Canonical entrypoint: append a record if given, else return recent."""
+    def run(self, record: Dict[str, Any]) -> Dict[str, Any]:
+        """Canonical entrypoint: append a record. Use recent() for reads."""
         self._set_status(AgentStatus.RUNNING)
         try:
-            if record is not None:
-                self.log(record)
-                result = {"ok": True}
-            else:
-                result = {"records": self.recent(n)}
+            self.log(record)
             self._set_status(AgentStatus.IDLE)
-            return result
+            return {"ok": True}
         except Exception:
             self._set_status(AgentStatus.ERROR)
             raise
