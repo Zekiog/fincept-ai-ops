@@ -38,9 +38,5 @@ def test_cors_origin_header_present(client):
 
 def test_request_too_large(client):
     big_payload = {"research_note": {"asset": "A" * 2_000_000}}
-    r = client.post(
-        "/research/run",
-        json=big_payload,
-        headers={"Content-Length": str(2_000_000)},
-    )
+    r = client.post("/research/run", json=big_payload)
     assert r.status_code in (413, 422)

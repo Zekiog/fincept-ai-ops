@@ -1,3 +1,4 @@
+import hmac
 import os
 from datetime import datetime, timezone
 
@@ -42,7 +43,7 @@ def _resolve_approval_secret() -> str:
 @router.post("/approval/webhook")
 def handle_approval(req: ApprovalRequest, x_approval_secret: str = Header(default="")):
     expected = _resolve_approval_secret()
-    if not expected or x_approval_secret != expected:
+    if not expected or not hmac.compare_digest(x_approval_secret, expected):
         raise HTTPException(status_code=403, detail="invalid_secret")
     record = {
         "human_approved": req.approved,
