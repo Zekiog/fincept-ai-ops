@@ -63,8 +63,16 @@ IMPLEMENTATION_AUDIT.md
 *_DRAFT.md
 
 # ─── Data & State ────────────────────────────────────────
-data/
-*.jsonl
+# Ignore data/ contents but keep the scaffold gitkeeps tracked.
+# Use `data/*` not `data/` so the parent stays visible and the re-includes below
+# are honored by Git.
+data/*
+!data/state/
+!data/audit/
+!data/state/.gitkeep
+!data/audit/.gitkeep
+data/state/*.json
+data/audit/*.jsonl
 *.sqlite
 *.db
 state/

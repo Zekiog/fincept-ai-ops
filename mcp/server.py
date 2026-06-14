@@ -20,11 +20,18 @@ import sys
 import os
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from apps.fincept_aiops.connectors.registry import get_connector
-from apps.fincept_aiops.research_pipeline import ResearchPipeline
-from apps.fincept_aiops.daily_briefing import DailyBriefingGenerator
-from apps.fincept_aiops.state_store import StateStore
-from apps.fincept_aiops.audit_logger import AuditLogger
+from mcp.tools import (
+    build_briefing,
+    evaluate_risk,
+    get_audit_log,
+    get_fundamentals,
+    get_market_data,
+    get_news,
+    get_paper_state,
+    get_portfolio_summary,
+    run_backtest,
+    run_research_pipeline,
+)
 
 TOOLS = {
     "get_market_data": {
@@ -90,6 +97,28 @@ TOOLS = {
             },
         },
     },
+    "evaluate_risk": {
+        "description": "Evaluate an order intent against the risk policy.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["order_intent"],
+            "properties": {
+                "order_intent": {"type": "object"},
+                "portfolio_context": {"type": "object"},
+            },
+        },
+    },
+    "build_briefing": {
+        "description": "Build today's briefing packet.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"extra": {"type": "object"}},
+        },
+    },
+    "get_portfolio_summary": {
+        "description": "Get the current paper portfolio summary (cash, exposure, P&L).",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
 }
 
 
@@ -97,31 +126,27 @@ def _tool_list():
     return {"tools": [{"name": k, "description": v["description"], "inputSchema": v["inputSchema"]} for k, v in TOOLS.items()]}
 
 
-def _call_tool(name: str, args: dict) -> dict:
-    pipeline = ResearchPipeline()
-    state = StateStore()
-    audit = AuditLogger()
+_DISPATCH = {
+    "get_market_data": lambda a: get_market_data(a.get("symbol", ""), a.get("period", "1d")),
+    "get_fundamentals": lambda a: get_fundamentals(a.get("symbol", "")),
+    "get_news": lambda a: get_news(a.get("symbol", ""), int(a.get("limit", 5))),
+    "run_research_pipeline": lambda a: run_research_pipeline(a["research_note"]),
+    "get_paper_state": lambda a: get_paper_state(),
+    "get_audit_log": lambda a: get_audit_log(int(a.get("n", 20))),
+    "run_backtest": lambda a: run_backtest(
+        a["signal"], a["price_series"], float(a.get("initial_equity", 10_000.0))
+    ),
+    "evaluate_risk": lambda a: evaluate_risk(a["order_intent"], a.get("portfolio_context")),
+    "build_briefing": lambda a: build_briefing(a.get("extra")),
+    "get_portfolio_summary": lambda a: get_portfolio_summary(),
+}
 
-    if name == "get_market_data":
-        return get_connector("market_data").fetch(args)
-    if name == "get_fundamentals":
-        return get_connector("fundamentals").fetch(args)
-    if name == "get_news":
-        return get_connector("news").fetch(args)
-    if name == "run_research_pipeline":
-        return pipeline.run(args["research_note"])
-    if name == "get_paper_state":
-        return {
-            "signal": state.load("latest_signal_candidate"),
-            "risk": state.load("latest_risk"),
-            "briefing": state.load("latest_briefing"),
-            "approval": state.load("latest_approval"),
-        }
-    if name == "get_audit_log":
-        return {"records": audit.recent(int(args.get("n", 20)))}
-    if name == "run_backtest":
-        return get_connector("backtest").fetch(args)
-    return {"error": f"Unknown tool: {name}"}
+
+def _call_tool(name: str, args: dict) -> dict:
+    handler = _DISPATCH.get(name)
+    if handler is None:
+        return {"error": f"Unknown tool: {name}"}
+    return handler(args)
 
 
 def _respond(msg_id, result):

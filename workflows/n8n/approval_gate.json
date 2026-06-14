@@ -1,1 +1,38 @@
-{"name":"approval_gate","nodes":[{"id":"trigger","name":"Webhook","type":"n8n-nodes-base.webhook","parameters":{"path":"approval","httpMethod":"POST"}},{"id":"forward","name":"Forward to API","type":"n8n-nodes-base.httpRequest","parameters":{"method":"POST","url":"http://localhost:8000/approval/webhook","sendBody":true}},{"id":"respond","name":"Respond","type":"n8n-nodes-base.respondToWebhook","parameters":{"respondWith":"json"}}],"connections":{"Webhook":{"main":[[{"node":"Forward to API","type":"main","index":0}]]},"Forward to API":{"main":[[{"node":"Respond","type":"main","index":0}]]}}}
+{
+  "name": "approval_gate",
+  "nodes": [
+    {
+      "id": "trigger",
+      "name": "Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "parameters": { "path": "approval", "httpMethod": "POST" }
+    },
+    {
+      "id": "forward",
+      "name": "Forward to API",
+      "type": "n8n-nodes-base.httpRequest",
+      "parameters": {
+        "method": "POST",
+        "url": "={{$env.FINCEPT_API_URL || 'http://api:8000'}}/approval/webhook",
+        "sendBody": true,
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            { "name": "X-Approval-Secret", "value": "={{$env.APPROVAL_SECRET}}" },
+            { "name": "Content-Type", "value": "application/json" }
+          ]
+        }
+      }
+    },
+    {
+      "id": "respond",
+      "name": "Respond",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "parameters": { "respondWith": "json" }
+    }
+  ],
+  "connections": {
+    "Webhook": { "main": [[{ "node": "Forward to API", "type": "main", "index": 0 }]] },
+    "Forward to API": { "main": [[{ "node": "Respond", "type": "main", "index": 0 }]] }
+  }
+}

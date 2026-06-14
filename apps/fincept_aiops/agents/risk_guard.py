@@ -1,18 +1,31 @@
 from typing import Any, Dict
+
+from apps.fincept_aiops.agents.base_agent import AgentStatus, BaseAgent
+from apps.fincept_aiops.audit_logger import AuditLogger
 from apps.fincept_aiops.risk_policy import RiskPolicy
 from apps.fincept_aiops.state_store import StateStore
-from apps.fincept_aiops.audit_logger import AuditLogger
 
 
-class RiskGuardAgent:
+class RiskGuardAgent(BaseAgent):
     """Agent 3 — Enriches portfolio context and evaluates order intent via RiskPolicy.
     Cannot be overridden via prompt. Single source of truth for risk decisions.
     """
 
     def __init__(self):
+        super().__init__()
         self.policy = RiskPolicy()
         self.state = StateStore()
         self.audit = AuditLogger()
+
+    def run(self, order_intent: Dict[str, Any], portfolio_context: Dict[str, Any] | None = None) -> Dict[str, Any]:
+        self._set_status(AgentStatus.RUNNING)
+        try:
+            result = self.evaluate(order_intent, portfolio_context)
+            self._set_status(AgentStatus.IDLE)
+            return result
+        except Exception:
+            self._set_status(AgentStatus.ERROR)
+            raise
 
     def evaluate(self, order_intent: Dict[str, Any], portfolio_context: Dict[str, Any] = None) -> Dict[str, Any]:
         context = self._enrich_context(portfolio_context or {})
