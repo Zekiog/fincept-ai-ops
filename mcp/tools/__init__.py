@@ -7,70 +7,125 @@ These are registered with the N8N MCP connector and FastAPI /mcp/tools endpoint.
 """
 from typing import Any, Dict, List
 
+from mcp.tools.market_data_tool import get_market_data, get_fundamentals, get_news
+from mcp.tools.research_tool import run_research_pipeline, get_paper_state
+from mcp.tools.broker_tool import get_positions, get_orders, get_portfolio_summary
+from mcp.tools.backtest_tool import run_backtest
+from mcp.tools.risk_tool import evaluate_risk
+from mcp.tools.briefing_tool import build_briefing
+from mcp.tools.audit_tool import get_audit_log
+
+__all__ = [
+    "get_market_data",
+    "get_fundamentals",
+    "get_news",
+    "run_research_pipeline",
+    "get_paper_state",
+    "get_positions",
+    "get_orders",
+    "get_portfolio_summary",
+    "run_backtest",
+    "evaluate_risk",
+    "build_briefing",
+    "get_audit_log",
+]
 
 MCP_TOOLS: List[Dict[str, Any]] = [
     {
         "name": "get_market_data",
-        "description": "Fetch real-time or historical market data for a given ticker symbol.",
+        "description": "Fetch OHLCV price data for a symbol.",
         "inputSchema": {
             "type": "object",
+            "required": ["symbol"],
             "properties": {
-                "ticker": {"type": "string", "description": "Stock ticker, e.g. AAPL, TSLA"},
-                "interval": {"type": "string", "enum": ["1m", "5m", "1h", "1d"], "default": "1d"},
-                "limit": {"type": "integer", "default": 30, "maximum": 500}
+                "symbol": {"type": "string", "description": "Ticker symbol e.g. AAPL"},
+                "period": {"type": "string", "description": "yfinance period e.g. 1d, 5d, 1mo", "default": "1d"},
             },
-            "required": ["ticker"]
-        }
+        },
     },
     {
-        "name": "run_backtest",
-        "description": "Run a supervised paper-trading backtest over historical data.",
+        "name": "get_fundamentals",
+        "description": "Fetch fundamental data (PE, ROE, market cap) for a symbol.",
         "inputSchema": {
             "type": "object",
+            "required": ["symbol"],
+            "properties": {"symbol": {"type": "string"}},
+        },
+    },
+    {
+        "name": "get_news",
+        "description": "Fetch recent news headlines for a symbol.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["symbol"],
             "properties": {
-                "strategy_id": {"type": "string", "description": "ID of the registered strategy"},
-                "start_date": {"type": "string", "format": "date", "description": "YYYY-MM-DD"},
-                "end_date": {"type": "string", "format": "date", "description": "YYYY-MM-DD"},
-                "initial_capital": {"type": "number", "default": 10000}
+                "symbol": {"type": "string"},
+                "limit": {"type": "integer", "default": 5},
             },
-            "required": ["strategy_id", "start_date", "end_date"]
-        }
+        },
+    },
+    {
+        "name": "run_research_pipeline",
+        "description": "Run the full research pipeline on a pre-built research note.",
+        "inputSchema": {
+            "type": "object",
+            "required": ["research_note"],
+            "properties": {
+                "research_note": {"type": "object"},
+            },
+        },
+    },
+    {
+        "name": "get_paper_state",
+        "description": "Get current paper trading state: signal, risk, briefing, approval.",
+        "inputSchema": {"type": "object", "properties": {}},
     },
     {
         "name": "get_audit_log",
-        "description": "Retrieve the audit log for agent actions and trade decisions.",
+        "description": "Get the last N audit log records.",
         "inputSchema": {
             "type": "object",
-            "properties": {
-                "agent_name": {"type": "string", "description": "Filter by agent name (optional)"},
-                "limit": {"type": "integer", "default": 50},
-                "since": {"type": "string", "format": "date-time"}
-            }
-        }
+            "properties": {"n": {"type": "integer", "default": 20}},
+        },
     },
     {
-        "name": "approve_trade",
-        "description": "Human-in-the-loop trade approval endpoint. Approves or rejects a pending trade signal.",
+        "name": "run_backtest",
+        "description": "Run a simple vectorized backtest on a signal against a price series.",
         "inputSchema": {
             "type": "object",
+            "required": ["signal", "price_series"],
             "properties": {
-                "trade_id": {"type": "string"},
-                "decision": {"type": "string", "enum": ["approve", "reject"]},
-                "reason": {"type": "string"}
+                "signal": {"type": "object"},
+                "price_series": {"type": "array", "items": {"type": "number"}},
+                "initial_equity": {"type": "number", "default": 10000.0},
             },
-            "required": ["trade_id", "decision"]
-        }
+        },
     },
     {
-        "name": "list_strategies",
-        "description": "List all registered trading strategies with their status and performance metrics.",
+        "name": "evaluate_risk",
+        "description": "Evaluate an order intent against the risk policy.",
         "inputSchema": {
             "type": "object",
+            "required": ["order_intent"],
             "properties": {
-                "status": {"type": "string", "enum": ["active", "paused", "all"], "default": "all"}
-            }
-        }
-    }
+                "order_intent": {"type": "object"},
+                "portfolio_context": {"type": "object"},
+            },
+        },
+    },
+    {
+        "name": "build_briefing",
+        "description": "Build today's briefing packet.",
+        "inputSchema": {
+            "type": "object",
+            "properties": {"extra": {"type": "object"}},
+        },
+    },
+    {
+        "name": "get_portfolio_summary",
+        "description": "Get the current paper portfolio summary (cash, exposure, P&L).",
+        "inputSchema": {"type": "object", "properties": {}},
+    },
 ]
 
 
