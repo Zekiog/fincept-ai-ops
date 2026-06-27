@@ -17,3 +17,47 @@ connectors:
   live_broker:
     status: disabled
     reason: no_live_trading_in_mvp
+
+tools:
+  market_data_tool:
+    status: active
+    module: mcp.tools.market_data_tool
+    functions:
+      - get_market_data
+      - get_fundamentals
+      - get_news
+  research_tool:
+    status: active
+    module: mcp.tools.research_tool
+    functions:
+      - run_research_pipeline
+      - get_paper_state
+  broker_tool:
+    status: active
+    module: mcp.tools.broker_tool
+    functions:
+      - get_positions
+      - get_orders
+      - get_portfolio_summary
+    note: paper_mode_only_never_live
+  backtest_tool:
+    status: active
+    module: mcp.tools.backtest_tool
+    functions:
+      - run_backtest
+  risk_tool:
+    status: active
+    module: mcp.tools.risk_tool
+    functions:
+      - evaluate_risk
+  briefing_tool:
+    status: active
+    module: mcp.tools.briefing_tool
+    functions:
+      - build_briefing
+  audit_tool:
+    status: active
+    module: mcp.tools.audit_tool
+    functions:
+      - get_audit_log
+    note: read_only
