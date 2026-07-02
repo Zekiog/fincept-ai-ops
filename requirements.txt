@@ -9,7 +9,7 @@ python-dotenv==1.0.1
 httpx==0.28.1
 
 # Testing
-pytest==8.2.2
+pytest==9.1.0
 pytest-asyncio==0.23.7
 httpretty==1.1.0
 
